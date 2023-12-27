@@ -1,9 +1,9 @@
 
-Section 32 : 32.Hands-on exercises - Ninja Level 11
+Section 32 : Hands-on exercises - Ninja Level 11
 
 ..........................................................................
 
-235. Hands-on exercise #1 :
+234. Hands-on exercise #1 :
 
 /*
 Start with this code. Instead of using the blank identifier,
@@ -48,16 +48,17 @@ That's a bad practice to throw an error away :
 The entire purpose of this program is to marshal this data structure
 to Jason and then print it out.
 
-L'utilisation de return ici est une façon de gérer proprement une erreur
-dans la fonction main sans exécuter le reste du code de la fonction,
+L'utilisation de return ici est UNE FAÇON DE GÉRER PROPREMENT UNE ERREUR
+DANS LA FONCTION main SANS EXÉCUTER LE RESTE DU CODE DE LA FONCTION,
 car dans la plupart des applications Go, la fonction main est le point
 d'entrée principal de l'application.
-En sortant prématurément en cas d'erreur, on évite l'exécution du reste
-de la logique qui pourrait dépendre du résultat de la sérialisation JSON.
+EN SORTANT PRÉMATURÉMENT EN CAS D'ERREUR, ON ÉVITE L'EXÉCUTION DU RESTE
+DE LA LOGIQUE QUI POURRAIT DÉPENDRE DU RÉSULTAT DE LA SÉRIALISATION JSON.
+-> ~ log.Fatalln(err)
 
 .....................................
 
-236. Hands-on exercise #2 :
+235. Hands-on exercise #2 :
 
 /*
 Start with this code. Create a custom error message using “fmt.Errorf”.
@@ -76,6 +77,15 @@ Start with this code. Create a custom error message using “fmt.Errorf”.
 		Last    string
 		Sayings []string
 	}
+	
+	func toJSON(a interface{}) ([]byte, error) {
+		bs, err := json.Marshal(a)
+		if err != nil {
+			return []byte{}, fmt.Errorf("There was an error marshalling %v in toJSON: %v", a, err)
+			// return []byte{}, errors.New(fmt.Sprintf("There was an error in toJSON %v", err))
+		}
+		return bs, nil
+	}
 
 	func main() {
 		p1 := person{
@@ -91,15 +101,6 @@ Start with this code. Create a custom error message using “fmt.Errorf”.
 		fmt.Println(string(bs))
 
 	}
-
-	func toJSON(a interface{}) ([]byte, error) {
-		bs, err := json.Marshal(a)
-		if err != nil {
-			return []byte{}, fmt.Errorf("There was an error marshalling %v in toJSON: %v", a, err)
-			// return []byte{}, errors.New(fmt.Sprintf("There was an error in toJSON %v", err))
-		}
-		return bs, nil
-	}
 	
 	{"First":"James","Last":"Bond","Sayings":["Shaken, not stirred","Any last wishes?","Never say never"]}
 
@@ -108,7 +109,7 @@ Start with this code. Create a custom error message using “fmt.Errorf”.
 
 .....................................
 
-237. Hands-on exercise #3 :
+236. Hands-on exercise #3 :
 
 /*
 Create a struct “customErr” which implements the builtin.error interface.
@@ -125,33 +126,47 @@ If you need a hint, here is one.
 
 	type customErr struct {
 		err error
+		info string
 	}
 
 	func (ce customErr) Error() string {
-		return fmt.Sprintf("There is a custom error : %v", ce.err)
+		//return fmt.Sprintf("There is a custom error : %v", ce.err)
+		return fmt.Sprintf("There is a custom error : %v", ce.info)
 	}
 
 	func main() {
-		c1 := customErr{err: nil}
+		c1 := customErr{err: nil, info: "a custom error"}
 		foo(c1)
 	}
 
 	func foo(e error) {
-		fmt.Println("foo ran -", e, "\n", e.(customErr).err)
+		//fmt.Println("foo ran -", e, "\n", e.(customErr).err)
+		fmt.Println("foo ran -", e, "\n", e.(customErr).info)
 	}
 
+	/*
 	foo ran - There is a custom error : <nil> 
 	 <nil>
+	*/
+	 
+	foo ran - There is a custom error : a custom error 
+	 a custom error
 
 ASSERTION :
+/*
 ./prog.go:21:38: e.err undefined (type error has no field or method err)	 
 -> e.err
+*/
 
-type error has no field 'err' : 
-you pass it in and type error and 'err' is not attached to error
-'err' is attached to 'customErr'.
+./prog.go:24:38: e.info undefined (type error has no field or method info)
+-> e.info
+
+type error has no field 'err' (or 'info) : 
+you pass it in and type error and 'err'/'info' is not attached to error
+'err'/'info' is attached to 'customErr'.
 And so if I want to use that, I have to use ASSERTION.
 	-> e.(customErr).err
+	-> e.(customErr).info
 That this type 'e' I'm asserting as type 'customErr'.
 
 -> Assertion is like if you have something 'customErr' implementing
@@ -187,7 +202,7 @@ CONVERSION :
 
 .....................................
 
-238. Hands-on exercise #4 :
+237. Hands-on exercise #4 :
 
 /*
 Starting with this code, use the 'sqrtError' struct AS A VALUE OF TYPE ERROR.
@@ -212,14 +227,7 @@ If you would like, use these numbers for your :
 	func (se sqrtError) Error() string {
 		return fmt.Sprintf("math error: %v %v %v", se.lat, se.long, se.err)
 	}
-
-	func main() {
-		_, err := sqrt(-10.23)
-		if err != nil {
-			log.Println(err)
-		}
-	}
-
+	
 	func sqrt(f float64) (float64, error) {
 		if f < 0 {
 			// nme := errors.New("more coffee needed")
@@ -228,13 +236,20 @@ If you would like, use these numbers for your :
 		}
 		return 42, nil
 	}
+
+	func main() {
+		_, err := sqrt(-10.23)
+		if err != nil {
+			log.Println(err)
+		}
+	}
 	
 	2009/11/10 23:00:00 math error: 50.2289 N 99.4656 W 
 	sqrt math error; square root of negative number: -10.23
 
 .....................................
 
-239. Hands-on exercise #5 :
+238. Hands-on exercise #5 :
 
 We are going to learn about testing next.
 For this exercise, take a moment and see how much you can figure out about testing
@@ -244,3 +259,8 @@ See if you can get a basic example of testing working.
 Cf. https://pkg.go.dev/testing
 Cf. https://www.golang-book.com/books/intro/12
 
+Cf. package "Section_32"
+
+Now run this command :
+
+	$ go test
